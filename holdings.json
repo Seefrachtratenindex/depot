@@ -1,0 +1,15 @@
+{
+  "currency": "EUR",
+  "positions": [
+    {"key": "TKA",  "name": "thyssenkrupp",    "isin": "DE0007500001", "symbols": ["TKA.DE", "TKA.F"],   "qty": 610},
+    {"key": "SIE",  "name": "Siemens",         "isin": "DE0007236101", "symbols": ["SIE.DE", "SIE.F"],   "qty": 115},
+    {"key": "ENR",  "name": "Siemens Energy",  "isin": "DE000ENER6Y0", "symbols": ["ENR.DE", "ENR.F"],   "qty": 50},
+    {"key": "MUV2", "name": "Münchener Rück",  "isin": "DE0008430026", "symbols": ["MUV2.DE", "MUV2.F"], "qty": 45},
+    {"key": "TKMS", "name": "TKMS",            "isin": "DE000TKMS001", "symbols": ["TKMS.DE", "TKMS.F"], "qty": 30},
+    {"key": "TKCC", "name": "TK Accelis",      "isin": "DE000TKCC1S8", "symbols": ["TKCC.DE", "TKCC.F"], "qty": 30,
+     "note": "Zuteilung 1 je 20 thyssenkrupp-Aktien (610/20 = 30,5; Rest i. d. R. bar ausgeglichen)"},
+    {"key": "ELFW", "name": "Deka MSCI World", "isin": "DE000ETFL508", "symbols": ["ELFW.DE", "ELFW.F"],
+     "amount_eur": 20000, "as_of": "2026-11-26",
+     "note": "Stückzahl wird einmalig aus 20.000 € zum Schlusskurs vom 26.11.2026 berechnet"}
+  ]
+}

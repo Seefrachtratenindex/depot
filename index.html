@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Depot</title>
+<style>
+:root{color-scheme:light dark;--bg:light-dark(#f3f5f8,#0e1116);--card:light-dark(#fff,#171b22);--ink:light-dark(#111418,#eef1f5);
+--mute:light-dark(#5f6670,#9aa3ad);--line:light-dark(#e6e9ee,#262c36);--up:#14a04a;--dn:#d9481c;--acc:light-dark(#2f5be0,#7b9bff);--sel:light-dark(#eef2ff,#1d2640)}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Calibri,"Segoe UI",Carlito,system-ui,sans-serif;overflow-x:clip}
+.wrap{max-width:1240px;margin:0 auto;padding:clamp(14px,3vw,28px) max(3vw,12px)}
+header{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;justify-content:space-between;margin-bottom:14px}
+h1{font-size:clamp(22px,3vw,30px);margin:0}
+.meta{color:var(--mute);font-size:14px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle;background:var(--mute)}
+.dot.open{background:var(--up)}
+.grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px;align-items:start}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.small{font-size:13px;color:var(--mute)}
+.big{font-size:clamp(32px,5vw,44px);font-weight:700;line-height:1.1;margin:2px 0 6px;white-space:nowrap}
+.badge{display:inline-block;color:#fff;border-radius:6px;padding:1px 8px;font-weight:700;font-size:14px;white-space:nowrap}
+.b-up{background:var(--up)}.b-dn{background:var(--dn)}.b-na{background:var(--mute)}
+.kpis{display:flex;flex-wrap:wrap;gap:8px 22px;margin:6px 0 10px}
+.kpis div{font-size:14px;color:var(--mute)}.kpis b{display:block;color:var(--ink);font-size:17px}
+.seg{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.seg button{font:inherit;font-size:15px;border:0;background:transparent;color:var(--mute);border-radius:8px;padding:6px 11px;min-height:36px;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--sel);color:var(--acc);font-weight:700}
+.fig{position:relative;height:300px;margin-top:8px}.fig>svg{position:absolute;inset:0;width:100%;height:100%}
+.tip{position:absolute;pointer-events:none;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:13px;box-shadow:0 4px 14px #0002;display:none;white-space:nowrap;z-index:2}
+.note{font-size:13px;color:var(--mute);margin:10px 0 0}
+.lhead{display:flex;justify-content:space-between;font-size:13px;color:var(--mute);padding:0 6px 6px}
+.row{display:grid;grid-template-columns:minmax(0,1fr) 84px 112px;gap:10px;align-items:center;padding:10px 8px;border-top:1px solid var(--line)}
+.rn{font-weight:700}.rr{font-size:13px;color:var(--mute)}
+.rp{text-align:right;font-weight:700;white-space:nowrap}.rp .badge{margin-top:3px;font-size:13px}
+.bar{height:5px;border-radius:3px;background:var(--line);margin-top:5px;overflow:hidden}.bar i{display:block;height:100%;background:var(--acc)}
+.spark{width:84px;height:30px}
+.stale{color:var(--dn);font-weight:700}
+.err{padding:30px;text-align:center;color:var(--mute)}
+@media(max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:420px){.row{grid-template-columns:minmax(0,1fr) 104px}.spark{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><h1>Depot</h1><div class="meta" id="stand">Daten werden geladen …</div></header>
+<div class="grid">
+  <section class="card" aria-label="Depotwert">
+    <div class="small">Depotwert</div>
+    <div class="big" id="total">–</div>
+    <div><span class="badge b-na" id="perChg">–</span> <span class="small" id="perLbl"></span></div>
+    <div class="kpis">
+      <div>Heute<b id="dayAbs">–</b></div>
+      <div>Heute in %<b id="dayPct">–</b></div>
+      <div>Positionen<b id="npos">–</b></div>
+    </div>
+    <div class="seg" id="per" role="group" aria-label="Zeitraum">
+      <button data-p="1T" aria-pressed="true">1T</button><button data-p="1W">1W</button><button data-p="1M">1M</button><button data-p="3M">3M</button><button data-p="1J">1J</button><button data-p="MAX">Max</button>
+    </div>
+    <div class="fig"><svg id="chart" aria-label="Depotentwicklung"></svg><div class="tip" id="tip"></div></div>
+    <p class="note" id="cover"></p>
+  </section>
+  <section class="card" aria-label="Positionen">
+    <div class="lhead"><span>Position · Stück · Anteil</span><span>Wert · heute</span></div>
+    <div id="list"></div>
+  </section>
+</div>
+<p class="note">Kurse: Yahoo Finance, ca. 15 Minuten verzögert, werktags während der Börsenzeit alle 15 Minuten automatisch abgerufen. Die Seite lädt neue Daten alle 5 Minuten selbst nach. Keine Anlageberatung, Angaben ohne Gewähr; Dividenden, Gebühren und Steuern sind nicht berücksichtigt.</p>
+</div>
+<script>
+{
+const $=s=>document.getElementById(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const eur=v=>v.toLocaleString("de-DE",{style:"currency",currency:"EUR",maximumFractionDigits:v>=1000?0:2});
+const eur2=v=>v.toLocaleString("de-DE",{style:"currency",currency:"EUR"});
+const sgn=v=>(v>0?"+":"")+eur(v);
+const pct=v=>(v>0?"+":"")+(v*100).toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2})+" %";
+const dDE=s=>{const[y,m,d]=s.split("-");return d+"."+m+"."+y};
+const T=s=>Date.parse(s+"T12:00:00Z");
+const cls=v=>v==null?"b-na":v>=0?"b-up":"b-dn";
+let D=null,per="1T";
+const DAYS={"1W":7,"1M":31,"3M":92,"1J":366,"MAX":1e5};
+
+function dailyPortfolio(){
+  // Summe je Handelstag; Positionen ohne Kurs an dem Tag (z. B. vor Börsengang) werden ausgelassen
+  const dates=[...new Set(D.positions.flatMap(p=>p.daily.map(x=>x[0])))].sort();
+  const maps=D.positions.map(p=>new Map(p.daily));
+  const out=[];
+  for(const d of dates){let v=0,n=0;D.positions.forEach((p,i)=>{const c=maps[i].get(d);if(c!=null){v+=c*p.qty;n++}});out.push({x:T(d),label:dDE(d),v,n})}
+  return out}
+function intradayPortfolio(){
+  const ts=[...new Set(D.positions.flatMap(p=>p.intraday.map(x=>x[0])))].sort((a,b)=>a-b);
+  if(!ts.length)return[];
+  const last=D.positions.map(p=>p.prevClose);const idx=D.positions.map(()=>0);
+  return ts.map(t=>{let v=0;D.positions.forEach((p,i)=>{const s=p.intraday;while(idx[i]<s.length&&s[idx[i]][0]<=t){last[i]=s[idx[i]][1];idx[i]++}v+=last[i]*p.qty});
+    return{x:t*1000,label:new Date(t*1000).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Berlin"}),v,n:D.positions.length}})}
+function seriesFor(){
+  const total=D.positions.reduce((a,p)=>a+p.price*p.qty,0);
+  if(per==="1T"){const s=intradayPortfolio();const prev=D.positions.reduce((a,p)=>a+p.prevClose*p.qty,0);
+    return{s:s.length?[{x:s[0].x-1,label:"Vortag",v:prev,n:D.positions.length},...s]:[],base:prev,total}}
+  const all=dailyPortfolio();const end=all.length?all[all.length-1].x:Date.now();
+  const s=all.filter(p=>p.x>=end-DAYS[per]*864e5);if(!s.length)return{s,base:null,total};
+  // Veränderung nur über Positionen, die zum Periodenstart schon notiert waren
+  const inc=D.positions.filter(p=>p.daily.length&&T(p.daily[0][0])<=s[0].x);
+  const d0=s[0].label.split(".").reverse().join("-");
+  const b0=inc.reduce((a,p)=>{const m=p.daily.filter(z=>z[0]<=d0);return a+(m.length?m[m.length-1][1]:0)*p.qty},0);
+  return{s,base:b0,total:inc.reduce((a,p)=>a+p.price*p.qty,0)}}
+
+function draw(){
+  const svg=$("chart"),W=svg.clientWidth,H=svg.clientHeight;if(!W||!D)return;
+  const {s,base,total}=seriesFor();const tip=$("tip");tip.style.display="none";
+  const ch=base?total/base-1:null;const b=$("perChg");b.className="badge "+cls(ch);b.textContent=ch==null?"–":pct(ch)+" · "+sgn(total-base);
+  const excl=per==="1T"||!s.length?[]:D.positions.filter(p=>!p.daily.length||T(p.daily[0][0])>s[0].x).map(p=>p.name);
+  $("perLbl").textContent=per==="1T"?"seit Vortagesschluss":(s.length?"seit "+s[0].label+(excl.length?" (ohne "+excl.join(", ")+")":""):"");
+  const full=D.positions.length,miss=s.length?D.positions.filter(p=>!p.daily.length||T(p.daily[0][0])>s[0].x).map(p=>p.name):[];
+  $("cover").textContent=per!=="1T"&&miss.length?"Im Zeitraum nicht durchgehend enthalten (erst später notiert): "+miss.join(", ")+". Der Verlauf davor umfasst nur die übrigen Positionen.":"";
+  if(s.length<2){svg.innerHTML=`<text x="${W/2}" y="${H/2}" text-anchor="middle" fill="currentColor" opacity=".6" font-size="14">Noch keine Kursdaten für diesen Zeitraum</text>`;return}
+  const x0=s[0].x,x1=s[s.length-1].x;let lo=Math.min(...s.map(p=>p.v)),hi=Math.max(...s.map(p=>p.v));const pad=(hi-lo||hi*.01)*.12;lo-=pad;hi+=pad;
+  const L=W<520?6:64,R=10,Tp=10,B=24,x=v=>L+(v-x0)/(x1-x0||1)*(W-L-R),y=v=>Tp+(hi-v)/(hi-lo)*(H-Tp-B);
+  const col=ch>=0?"var(--up)":"var(--dn)";
+  const ln=s.map((p,i)=>(i?"L":"M")+x(p.x).toFixed(1)+","+y(p.v).toFixed(1)).join("");
+  let g="";for(let i=0;i<=4;i++){const v=lo+(hi-lo)*i/4;g+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/>`+(W<520?"":`<text x="${L-6}" y="${y(v)+4}" text-anchor="end" font-size="12" fill="var(--mute)">${esc(Math.round(v).toLocaleString("de-DE"))}</text>`)}
+  [0,Math.floor(s.length/2),s.length-1].forEach((k,i)=>{g+=`<text x="${x(s[k].x)}" y="${H-6}" text-anchor="${["start","middle","end"][i]}" font-size="12" fill="var(--mute)">${esc(s[k].label)}</text>`});
+  const bl=base?`<line x1="${L}" x2="${W-R}" y1="${y(base)}" y2="${y(base)}" stroke="var(--mute)" stroke-dasharray="3 4" opacity=".6"/>`:"";
+  svg.innerHTML=`<defs><linearGradient id="ga" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity=".22"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs>${g}${bl}<path d="${ln}L${x(x1)},${H-B}L${x(x0)},${H-B}Z" fill="url(#ga)"/><path d="${ln}" fill="none" stroke="${col}" stroke-width="2.2" stroke-linejoin="round"/><circle id="cd" r="4" fill="${col}" opacity="0"/>`;
+  svg.onpointermove=e=>{const r=svg.getBoundingClientRect(),mx=e.clientX-r.left;let k=0,bd=1e9;s.forEach((p,i)=>{const d=Math.abs(x(p.x)-mx);if(d<bd){bd=d;k=i}});const p=s[k];
+    tip.innerHTML=`<b>${esc(eur(p.v))}</b> · ${esc(p.label)}${p.n<full?`<br><span class="small">${p.n} von ${full} Positionen</span>`:""}`;tip.style.display="block";
+    tip.style.left=Math.min(Math.max(0,x(p.x)-tip.offsetWidth/2),W-tip.offsetWidth)+"px";tip.style.top=Math.max(0,y(p.v)-56)+"px";
+    const cd=$("cd");cd.setAttribute("cx",x(p.x));cd.setAttribute("cy",y(p.v));cd.setAttribute("opacity",1)};
+  svg.onpointerleave=()=>{tip.style.display="none";const cd=$("cd");if(cd)cd.setAttribute("opacity",0)};
+}
+function spark(p){let w;if(per==="1T")w=p.intraday.map(z=>[z[0]*1000,z[1]]);else{const end=p.daily.length?T(p.daily[p.daily.length-1][0]):0;w=p.daily.map(z=>[T(z[0]),z[1]]).filter(z=>z[0]>=end-DAYS[per]*864e5)}
+  if(w.length<2)return'<svg class="spark"></svg>';const vs=w.map(z=>z[1]),lo=Math.min(...vs),hi=Math.max(...vs),t0=w[0][0],t1=w[w.length-1][0];
+  const up=per==="1T"?p.price>=p.prevClose:w[w.length-1][1]>=w[0][1];
+  return`<svg class="spark" viewBox="0 0 84 30"><polyline points="${w.map(z=>((z[0]-t0)/(t1-t0||1)*80+2).toFixed(1)+","+(27-(z[1]-lo)/(hi-lo||1)*24).toFixed(1)).join(" ")}" fill="none" stroke="${up?"var(--up)":"var(--dn)"}" stroke-width="1.6"/></svg>`}
+function list(){
+  const total=D.positions.reduce((a,p)=>a+p.price*p.qty,0);
+  $("list").innerHTML=[...D.positions].sort((a,b)=>b.price*b.qty-a.price*a.qty).map(p=>{const v=p.price*p.qty,dc=p.price/p.prevClose-1,w=v/total;
+    const q=Number.isInteger(p.qty)?p.qty:p.qty.toLocaleString("de-DE",{maximumFractionDigits:2});
+    return`<div class="row" title="${esc(p.note||"")}"><div><div class="rn">${esc(p.name)}${p.stale?' <span class="stale" title="Letzter Abruf fehlgeschlagen">· veraltet</span>':""}</div><div class="rr">${esc(q)} Stk. × ${esc(eur2(p.price))} · ${esc((w*100).toLocaleString("de-DE",{maximumFractionDigits:1}))} %</div><div class="bar"><i style="width:${(w*100).toFixed(1)}%"></i></div></div>${spark(p)}<div class="rp">${esc(eur(v))}<br><span class="badge ${cls(dc)}">${esc(pct(dc))}</span></div></div>`}).join("")}
+function head(){
+  const total=D.positions.reduce((a,p)=>a+p.price*p.qty,0),prev=D.positions.reduce((a,p)=>a+p.prevClose*p.qty,0);
+  $("total").textContent=eur2(total);$("dayAbs").textContent=sgn(total-prev);$("dayPct").textContent=pct(total/prev-1);
+  $("dayAbs").style.color=$("dayPct").style.color=total>=prev?"var(--up)":"var(--dn)";$("npos").textContent=D.positions.length;
+  const now=new Date(),wd=!["Sat","Sun"].includes(now.toLocaleString("en-US",{timeZone:"Europe/Berlin",weekday:"short"}));
+  const hm=now.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Berlin"});const open=wd&&hm>="09:00"&&hm<"17:30";
+  const upd=new Date(D.updated);const age=Math.round((now-upd)/6e4);
+  $("stand").innerHTML=`<span class="dot${open?" open":""}"></span>${open?"Xetra geöffnet":"Xetra geschlossen"} · Stand ${esc(upd.toLocaleString("de-DE",{dateStyle:"short",timeStyle:"short",timeZone:"Europe/Berlin"}))} Uhr`+(open&&age>45?` · <span class="stale">seit ${age} Min. kein Update</span>`:"")}
+function all(){head();draw();list()}
+$("per").querySelectorAll("button").forEach(b=>b.onclick=()=>{per=b.dataset.p;$("per").querySelectorAll("button").forEach(z=>z.setAttribute("aria-pressed",z===b));draw();list()});
+const ro=new ResizeObserver(draw);ro.observe($("chart"));
+async function load(){
+  try{const r=await fetch("data/portfolio.json?ts="+Date.now(),{cache:"no-store"});if(!r.ok)throw 0;const j=await r.json();
+    j.positions=(j.positions||[]).filter(p=>p.qty&&p.price);if(!j.positions.length)throw 0;D=j;all()}
+  catch(e){if(!D){$("stand").textContent="Noch keine Kursdaten – unter Actions den ersten Lauf starten.";$("list").innerHTML='<div class="err">Noch keine Daten vorhanden.</div>'}}}
+load();setInterval(load,5*60*1000);
+}
+</script>
+</body>
+</html>
